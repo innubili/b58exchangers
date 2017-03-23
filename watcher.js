@@ -2,10 +2,14 @@
  * Created by rudy on 20.03.17.
  */
 
+var extend = require('extend');
+
 var Exchanger = require('./exchanger.js');
 var Poloniex = require('./xPoloniex.js');
+var Kraken = require('./xKraken.js');
+var Bitstamp = require('./xBitstamp.js');
 
-const currencies = {
+const cryptoCurrencies = {
     'REP'  : 'Augur',
     'BANX' : 'BanxShares',
     'BTC'  : 'Bitcoin',
@@ -30,7 +34,9 @@ const currencies = {
     'XLM'  : 'Stellar',
     'DAO'  : 'The DAO',
     'ZEC'  : 'Zcash',
-    'ZCL'  : 'Zclassic',
+    'ZCL'  : 'Zclassic'};
+
+const countryCurrencies = {
     'USD'  : 'US Dollar',
     'JPY'  : 'Japanese Yen',
     'EUR'  : 'Euro',
@@ -39,6 +45,8 @@ const currencies = {
 
 var tickers = {};
 function initTickers(){
+    var currencies = {};
+    extend(currencies, cryptoCurrencies, countryCurrencies);
     var cnt = 0;
     for (var left in currencies) {
         for (var right in currencies) {
@@ -53,19 +61,13 @@ function initTickers(){
 initTickers();
 
 const exchangers = {
-    bitstamp: null,
-    kraken: new Exchanger('kraken', tickers),
-    poloniex: new Poloniex(tickers)
+   kraken: new Kraken(tickers, cryptoCurrencies, countryCurrencies),
+   poloniex: new Poloniex(tickers, cryptoCurrencies, countryCurrencies),
+    bitstamp: new Bitstamp(tickers, cryptoCurrencies, countryCurrencies)
 };
 
-function init(){
-
-    var p = exchangers.poloniex;
-    p.run();
-
-    // exchangers.kraken._init = function(){this.log('initialized');};
-    // exchangers.kraken._initTickers = function(){this.log('_initTickers() done.')};
-    // exchangers.kraken.run();
+function run(){
+    for (var x in exchangers) exchangers[x].run();
 }
 
-init();
+run();

@@ -2,14 +2,18 @@
  * Created by rudy on 22.03.17.
  */
 
-function Exchanger(name, tickers, uriTicker, uriOrderBooks){
+function Exchanger(name, tickers, cryptoCurr, countryCurr){
+
+    var extend = require('extend');
 
     // PRIVATE,  TBI by exchanger
     this._init  = function(){this._tbi('_init');}; // exchnage specific intialization
     this._initTickers  = function(cb){this._tbi('_initTickers');}; // exchnage specific intialization
-    this._fixCurrencies = function(){this._tbi('_fixCurrencies');};
+    this._fixTickers = function(){this._tbi('_fixTickers');};
     this._mapTickerIds = tickers;  // map with ALL tickerId(b58)
-    this._tickers = []; // list with all exchanger's tickers;
+    this._tickers = {}; // list with all exchanger's tickers;
+    this.cryptoCurrencies = Object.keys(cryptoCurr);
+    this.countryCurrencies = Object.keys(countryCurr);
     this._lastTickers = null;   // map with all last fetched tickers
     this._lastOrderBooks = {};  // map with all last fetched order books
     this._run = function(){this._tbi('_run');}; // converter JSON(exchanger)->JSON(b58)
@@ -23,6 +27,14 @@ function Exchanger(name, tickers, uriTicker, uriOrderBooks){
     this.name = name || '???';
     this.lastOrderBooks = [];
     this.tickerIds = function(){ return Object.keys(this._mapTickerIds); }; // std ticker names
+
+    this.isCountryCurrency = function(ticker){
+        return ticker && this.countryCurrencies.indexOf(ticker.trim()) > -1;
+    };
+
+    this.isCryptoCurrency = function(ticker){
+        return ticker && this.cryptoCurrencies.indexOf(ticker.trim()) > -1;
+    };
 
     this.lastTickers = function(){
        if (!this._lastTickers) {
@@ -82,20 +94,21 @@ function Exchanger(name, tickers, uriTicker, uriOrderBooks){
     };
 
     this.initTickers = function(cb) {
+        this._fixTickers();
         this.log('initTickers(all) created ' + (this._mapTickerIds ? Object.keys(this._mapTickerIds).length : 0) + ' entries');
         this._initTickers(cb);
     };
 
     this.hasTicker = function(xTicker){
-        var found = false;
         for(var i in this._mapTickerIds){
            if(this._mapTickerIds[i] === xTicker){
-               found = true;
-               break;
+               return i;
            }
         }
-        return found;
-    }
+    };
+
+    this.isReady = function() {return this.ready; }
+    this.isRunning = function() {return this.running; }
 }
 
 module.exports = Exchanger;

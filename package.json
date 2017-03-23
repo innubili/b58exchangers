@@ -15,10 +15,12 @@
     "url": "https://github.com/innubili/b58exchangers/issues"
   },
   "homepage": "https://github.com/innubili/b58exchangers#readme",
-  "description": "",
+  "description": "cryptocurrency excahngers data aggregator and pusher",
   "dependencies": {
+    "async-polling": "^0.2.1",
     "autobahn": "^0.11.2",
     "extend": "^3.0.0",
+    "pusher-client": "^1.1.0",
     "request": "^2.81.0"
   }
 }

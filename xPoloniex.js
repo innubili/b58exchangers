@@ -2,55 +2,58 @@
  * Created by rudy on 22.03.17.
  */
 
-function Poloniex(mapTickers){
+function Poloniex(tickers, cryptoCurr, countryCurr){
 
     var ex = require('./exchanger.js');
     var extend = require('extend');
     var autobahn = require('autobahn');
 
-    extend(true, this, new ex('poloniex', mapTickers));
+    extend(true, this, new ex('poloniex', tickers, cryptoCurr, countryCurr));
 
     this._connection = new autobahn.Connection({
         url: 'wss://api.poloniex.com',
         realm: 'realm1'
     });
 
-    this._fixCurrencies = function(){
+    this._fixTickers = function(){
         var dict = {
             'USD' : 'USDT'
         };
         for(var our in dict){
             for(var i in this._mapTickerIds){
-                if (i.indexOf(our) >=0) {
-                    this._mapTickerIds[i] = i.replace(our, dict[our]);
-                    //this.log('_fixCurrencies() found: ' + our + ' in ' + i + ' -> ' +  this._mapTickerIds[i]);
-                }
+                var xcgTicker = i.indexOf(our) >=0 ? i.replace(our, dict[our]) : i;
+                this._mapTickerIds[i] = xcgTicker;
+                this._tickers[xcgTicker] = null;
             }
         }
     };
 
     this._initTickers = function(cb){
-       this._fixCurrencies();
         var request = require('request');
         request('https://poloniex.com/public?command=returnTicker', function (error, response, body) {
             if (error) this.err('error:', error); // Print the error if one occurred
-            if (response) this.log('statusCode:', response.statusCode); // Print the response status code if a response was received
-            if (body) {
+            if (response && response.statusCode && response.statusCode != 200) {
+                this.log('statusCode: ' + response.statusCode);
+            } if (body) {
                 var rt = JSON.parse(body);
                 var cnt = 0;
                 var notFound = [];
                 if (rt){
                     for(var t in rt){
-                        if (this.hasTicker(t)) {
+                        var tickerId = this.hasTicker(t);
+                        if (tickerId) {
                             cnt++;
-                            this._tickers.push(t);
-                            this.log('_initTicker()[' + cnt + ' found: ' + t);
+                            this._tickers[t] = tickerId;
+                            // this.log('_initTicker()[' + cnt + ' found: ' + t);
                         } else {
                             notFound.push(t);
                         }
                     }
                 }
-                this.log('_initTickers(after clean) ' + this._tickers.length + ' entries');
+                for(var i in this._tickers){
+                    if (!this._tickers[i]) delete this._tickers[i];
+                }
+                this.log('_initTickers(after clean) ' + Object.keys(this._tickers).length + ' entries, missing: \n\t' + notFound.join('\t') +'\n_tickers: \n\t' + Object.keys(this._tickers).join('\t'));
                 if (cb) cb();
             }
             this.log('_initTickers() done.')
@@ -59,9 +62,7 @@ function Poloniex(mapTickers){
         this.log('_initTickers()...')
     };
 
-    this._init = function() {
-
-    };
+    this._init = function() {};
 
     this._run = function(){
         this.log('opening connection...');
@@ -69,15 +70,18 @@ function Poloniex(mapTickers){
     };
 
     this._connection.onopen = function(session){
-        this.log('running...');
 
         var _marketEvent = function(pair, args, kwargs) {
             var list = [];
             if (args.length > 0) {
-                for (var i in args) list.push(getMktEntry(this.name, pair, args[i], kwargs.seq));
-                this.log('_marketEvent: ' + JSON.stringify(list));
+                for (var i in args){
+                    var entry = getMktEntry(this.name, pair, args[i], kwargs.seq);
+                    if (entry.kind === 'newTrade')
+                        this.log('_marketEvent: ' + JSON.stringify(entry));
+                    list.push(entry);
+                }
             } else {
-                // console.log('marketEv (empty)' + JSON.stringify(kwargs.seq));
+               //  this.log('_marketEvent (empty)' + JSON.stringify(kwargs.seq));
             }
         }.bind(this);
 
@@ -127,9 +131,11 @@ function Poloniex(mapTickers){
         session.subscribe('BTC_REP', btcRepEv);
         session.subscribe('BTC_NXT', btcNxtEv);
         session.subscribe('BTC_STR', btcStrEv);
+        this.log('running...');
     }.bind(this);
 
     this._connection.onclose = function () {
+        this.running = false;
         this.log('stopped.');
     }.bind(this);
 
