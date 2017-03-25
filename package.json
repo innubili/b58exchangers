@@ -19,6 +19,7 @@
   "dependencies": {
     "async-polling": "^0.2.1",
     "autobahn": "^0.11.2",
+    "bidirectional-map": "^1.0.3",
     "extend": "^3.0.0",
     "pusher-client": "^1.1.0",
     "request": "^2.81.0"

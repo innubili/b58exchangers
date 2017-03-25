@@ -51,65 +51,55 @@ function Bitstamp(tickers, cryptoCurr, countryCurr){
 
     this._init = function() {
         var pusher = new Pusher('de504dc5763aeef9ff52');
-        this._tickerChannels = {};
+        this._channels = {};
+        // prepare channels
         for(var t in this._tickers){
-            var channel = pusher.subscribe('live_trades'+ (t === 'btcusd' ? '' : ('_'+t)));
-            channel.id = t;
-            channel.listen = function(event, cb){
-                this.bind(event, function(data){
-                    cb(this.id, data);
-                });
-            };
-            this._tickerChannels[t] = channel;
+            var postfix = t === 'btcusd' ? '' : ('_'+t);
+            this._channels[t] = {
+                trades: { name: 'live_trades' + postfix,  event: 'trade', pusher: 'pushTradeEvent', channel: null},
+                order_created: { name: 'live_orders' + postfix,  event: 'order_created', pusher: 'pushOrderBookEvent', channel: null},
+                order_changed: { name: 'live_orders' + postfix,  event: 'order_changed', pusher: 'pushOrderBookEvent', channel: null},
+                order_deleted: { name: 'live_orders' + postfix,  event: 'order_deleted', pusher: 'pushOrderBookEvent', channel: null}
+            }
         }
-
-        // var uriAllTickers = 'https://api.kraken.com/0/public/Ticker?pair=' + Object.keys(this._tickers).join(',');
-        //
-        // this._poller = polling(function(end){
-        //     var request = require('request');
-        //     request(uriAllTickers,
-        //         function (error, response, body) {
-        //             if (error) {
-        //                 end(error);
-        //                 return;
-        //             }
-        //             if (response) {
-        //                 this.log('statusCode: ' + response.statusCode);
-        //             }
-        //             if (body) {
-        //                 end(null, JSON.parse(body).result);
-        //             }
-        //         }.bind(this));
-        // }.bind(this), pollTime);
-        //
-        // this._poller.on('error', function(err){
-        //     this.err(err);
-        //     this.stop();
-        // }.bind(this));
-        //
-        // this._poller.on('result', function(result){
-        //     this.log(JSON.stringify(result));
-        // }.bind(this));
-        //
-        // this._poller.on('stop', function () {
-        //     this.running = false;
-        //     this.log('stopped.');
-        // }.bind(this));
+        // subscribe all channels
+        for(var id in this._channels){
+            var c = this._channels[id];
+            for(var e in c){
+                var ch = pusher.subscribe(c[e].name);
+                ch.id = id;
+                ch.event = c[e].event;
+                ch.pusher = c[e].pusher;
+                ch.listen = function(event, cb){
+                    this.bind(event, function(data){
+                        cb(this.event, this.id, this.pusher, data);
+                    });
+                };
+                c[e].channel = ch;
+            }
+        }
     };
 
     this._run = function(){
         this.log('running...');
-        for(var t in this._tickers) {
-            this._tickerChannels[t].listen('trade', function(id, data){
-                this.log('trade <'+id+'> data: ' + JSON.stringify(data));
-            }.bind(this));
+        for(var id in this._channels){
+            var c = this._channels[id];
+            for(var e in c){
+                var channel = c[e].channel;
+                this.log('_run() listening to <' + e +'> of ' + channel.id);
+                channel.listen(c[e].event, function(ev, id, pusher, data){
+                    data._exchange = this.name;
+                    data._id = id;
+                    data._event = ev;
+                    this[pusher](data);
+                    //this.log(ev + '<'+id+'> data: ' + JSON.stringify(data));
+                }.bind(this));
+            }
         }
     };
 
     this._stop = function(){
-//        this.log('stopping...');
         this.log('stopped.');
-//        this._poller.stop();
     }
 }
 

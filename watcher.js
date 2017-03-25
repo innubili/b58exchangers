@@ -61,9 +61,9 @@ function initTickers(){
 initTickers();
 
 const exchangers = {
-   kraken: new Kraken(tickers, cryptoCurrencies, countryCurrencies),
-   poloniex: new Poloniex(tickers, cryptoCurrencies, countryCurrencies),
-    bitstamp: new Bitstamp(tickers, cryptoCurrencies, countryCurrencies)
+   // kraken: new Kraken(tickers, cryptoCurrencies, countryCurrencies),
+   // poloniex: new Poloniex(tickers, cryptoCurrencies, countryCurrencies),
+   bitstamp: new Bitstamp(tickers, cryptoCurrencies, countryCurrencies)
 };
 
 function run(){

@@ -20,6 +20,7 @@ function Exchanger(name, tickers, cryptoCurr, countryCurr){
     this._stop = function(){this._tbi('_stop');}; // converter JSON(exchanger)->JSON(b58)
     this._getTicker = function(){this._tbi('_getTicker');}; // converter JSON(exchanger)->JSON(b58)
     this._getOrderBook = function(){this._tbi('_getOrderBook');}; // converter JSON(exchanger)->JSON(b58)
+    this._transformData = function(kind, data){this.log('_transformData('+kind+') TBI!');return data;};
     this.ready = false;
     this.running = false;
 
@@ -82,6 +83,16 @@ function Exchanger(name, tickers, cryptoCurr, countryCurr){
         } else {
             this._run();
         }
+    };
+
+    this.pushTradeEvent = function(data){
+        data = this._transformData('trade', data);
+        this.log('TradeEvent: ' + JSON.stringify(data));
+    };
+
+    this.pushOrderBookEvent = function(data){
+        data = this._transformData('orderBook', data);
+        this.log( 'OrderBookEvent: ' + JSON.stringify(data));
     };
 
     this.stop = function() {
