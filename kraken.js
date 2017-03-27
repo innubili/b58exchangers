@@ -20,8 +20,7 @@ var Kraken = function(translator, injector){
 
     this.init = function(){
         var fetchPairs = fetch('https://api.kraken.com/0/public/AssetPairs');
-        var ex = this;
-        ex.log('init(): fetching pairs...');
+        this.log('init(): fetching pairs...');
         fetchPairs
             .then(function(res) {
                 if (res.status === 200) return res.json();
@@ -31,26 +30,30 @@ var Kraken = function(translator, injector){
                 if (json && json.result){
                     // add supported pairs
                     var fetched = Object.keys(json.result);
-                    ex.log('init(): got ' + fetched.length + ' pairs, parsing...');
-                    ex.addAllPairs(fetched);
-                    var pairs = ex.pairs();
-                    ex.log('init(): ' + pairs.length +' pairs created...');
+                    this.log('init(): got ' + fetched.length + ' pairs, parsing...');
+                    this.addAllPairs(fetched);
+
+                    // create connectors
+                    var pairs = this.pairs();
+                    this.log('init(): ' + pairs.length +' pairs created...');
                     var uriOB = 'https://api.kraken.com/0/public/Depth?pair={{pair}}&count=1000';
                     for(var i in pairs){
                         var pair = pairs[i];
                         var uri = uriOB.replace('{{pair}}', pair);
-                        ex.addConnector(new Connector(ex, {kind: 'fetch', uri: uri}));
+                        this.addConnector(new Connector(this, {kind: 'fetch', uri: uri}));
                     }
-                    ex.log('init(): ' + ex.connectors.length +' fetch connectors created (each polling every 0.5s)...');
+                    this.log('init(): ' + this.connectors.length +' fetch connectors created (each polling every 0.5s)...');
+
                     // TODO what else?
-                    ex.log('init(): done.');
+
+                    this.log('init(): done.');
                 } else {
                     return Promise.reject('init(json) wrong data format');
                 }
-            })
+            }.bind(this))
             .catch(function(error){
-                ex.error(error);
-            });
+                this.error(error);
+            }.bind(this));
     };
 
     this.run = function(){
