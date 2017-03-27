@@ -67,7 +67,7 @@ function Translator(cryptos, moneys, alias, events){
 
     this.addExchange = function(exchangeName, pairFn){
         this.pairs[exchangeName] = new bimap();
-        this._functions[exchangeName] = {pairFn: pairFn};
+        this._functions[exchangeName] = {pair: pairFn};
         this._eventNames[exchangeName] =  new bimap();
     };
 
@@ -79,14 +79,23 @@ function Translator(cryptos, moneys, alias, events){
         this._setFn(exchange, 'obook', fn);
     };
 
+    this.getPairs = function(exchange){
+        return Array.from(this.pairs[exchange].keys());
+    };
     this.addPair = function(exchange, pair){
-       var _pair = this._functions[exchange].pairFn(pair);
+       var _pair = this._functions[exchange].pair(pair);
        var mainPair = this._mainPair(_pair.left, _pair.right);
        if (this._wantedPair(mainPair)) {
            this.pairs[exchange].set(pair, mainPair);
-           console.log('addPair('+pair+') wanted: ' + mainPair);
+           //console.log('addPair('+pair+') wanted: ' + mainPair);
        } else {
-           console.log('addPair('+pair+') skip: ' + _pair.left + '_' + _pair.right);
+           console.log('\tskip: ' + _pair.left + '_' + _pair.right);
+       }
+    };
+
+    this.addAllPairs = function(exchange, pairs){
+       for(var i in pairs){
+           this.addPair(exchange, pairs[i]);
        }
     };
 

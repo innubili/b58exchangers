@@ -38,13 +38,20 @@ const _moneys = {
     'CNY'  : 'Chinese Yuan'
 };
 
+const _events = {
+    trade: 'TRADE',
+    order_book_new: 'OB_NEW',
+    order_book_change: 'OB_CHG',
+    order_book_delete: 'OB_DEL'
+};
+
 var config = {
     cryptoCurrencies: _cryptos,
     cryptos : Object.keys(_cryptos),
     moneyCurrencies: _moneys,
     moneys: Object.keys(_moneys),
     alias: {'BTC': ['XBT'], 'XDG': ['DOGE']},
-    events: {trade: 'TRADE', order_book_new: 'OB_NEW', order_book_change: 'OB_CHG', order_book_delete: 'OB_DEL'}
+    events: _events
 };
 
 module.exports = config;
